@@ -10,13 +10,12 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
-import React, { useState, useEffect,  } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { auth } from "../firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { StatusBar } from "expo-status-bar";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 const LoginScreen = () => {
@@ -29,12 +28,11 @@ const LoginScreen = () => {
   const login = () => {
     setLoading(true); // Start loading
     signInWithEmailAndPassword(auth, email, password)
-      .then(async (userCredential) => {
+      .then((userCredential) => {
         const user = userCredential.user;
         console.log("User details", user);
-  
-        // Save user info in AsyncStorage
-        await AsyncStorage.setItem("user", JSON.stringify(user));
+
+        // After successful login, navigate to the "Main" screen
         navigation.replace("Main");
       })
       .catch((error) => {
@@ -53,16 +51,16 @@ const LoginScreen = () => {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const user = await AsyncStorage.getItem("user");
+        // If user is logged in, navigate to the "Main" screen
+        const user = auth.currentUser;
         if (user) {
-          // User is logged in, redirect to Main screen
           navigation.replace("Main");
         }
       } catch (e) {
-        console.error("Failed to fetch user from storage", e);
+        console.error("Failed to check user", e);
       }
     };
-  
+
     checkUser();
   }, []);
 
@@ -116,40 +114,40 @@ const LoginScreen = () => {
           </View>
 
           <View style={{ marginTop: 15 }}>
-      <Text style={{ fontSize: 18, fontWeight: "600", color: "gray" }}>
-        Password
-      </Text>
+            <Text style={{ fontSize: 18, fontWeight: "600", color: "gray" }}>
+              Password
+            </Text>
 
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          borderBottomColor: "gray",
-          borderBottomWidth: 1,
-          marginVertical: 10,
-          width: 300,
-        }}
-      >
-        <TextInput
-          value={password}
-          onChangeText={(text) => setPassword(text)}
-          secureTextEntry={!showPassword} // Toggle visibility
-          placeholder="Password"
-          placeholderTextColor={"black"}
-          style={{
-            fontSize: 18,
-            flex: 1, // Take up available space
-          }}
-        />
-        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-          <MaterialIcons
-            name={showPassword ? "visibility" : "visibility-off"} // Change icon
-            size={24}
-            color="gray"
-          />
-        </TouchableOpacity>
-      </View>
-    </View>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                borderBottomColor: "gray",
+                borderBottomWidth: 1,
+                marginVertical: 10,
+                width: 300,
+              }}
+            >
+              <TextInput
+                value={password}
+                onChangeText={(text) => setPassword(text)}
+                secureTextEntry={!showPassword} // Toggle visibility
+                placeholder="Password"
+                placeholderTextColor={"black"}
+                style={{
+                  fontSize: 18,
+                  flex: 1, // Take up available space
+                }}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <MaterialIcons
+                  name={showPassword ? "visibility" : "visibility-off"} // Change icon
+                  size={24}
+                  color="gray"
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
 
         <Pressable

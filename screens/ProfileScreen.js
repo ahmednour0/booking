@@ -4,7 +4,6 @@ import { StyleSheet, Text, TextInput, View, ActivityIndicator, TouchableOpacity 
 import { getAuth, signOut } from "firebase/auth";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { getFirestore, doc, getDoc } from "firebase/firestore";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
@@ -39,7 +38,6 @@ const ProfileScreen = () => {
         const user = auth.currentUser;
 
         if (user) {
-         
           const db = getFirestore();
           const userDocRef = doc(db, "users", user.uid); // Replace "users" with your collection name
           const userDoc = await getDoc(userDocRef);
@@ -47,9 +45,6 @@ const ProfileScreen = () => {
           if (userDoc.exists()) {
             const userData = userDoc.data();
             setUserData(userData);
-
-            // Save data to AsyncStorage
-            await AsyncStorage.setItem("userData", JSON.stringify(userData));
           } else {
             console.log("No such document!");
           }
@@ -63,23 +58,6 @@ const ProfileScreen = () => {
       }
     };
 
-    const loadUserDataFromStorage = async () => {
-      setLoading(true);
-
-      try {
-        if (storedUserData) {
-          setUserData(JSON.parse(storedUserData));
-        }
-        const storedUserData = await AsyncStorage.getItem("userData");
-
-      } catch (error) {
-        console.error("Error loading user data from storage: ", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadUserDataFromStorage(); // Load data from AsyncStorage on app start
     fetchUserData(); // Fetch data from Firestore if logged in
   }, []);
 
@@ -87,10 +65,6 @@ const ProfileScreen = () => {
     const auth = getAuth();
     try {
       await signOut(auth);
-
-      // Clear AsyncStorage
-      await AsyncStorage.removeItem("userData");
-      await AsyncStorage.removeItem("user");
       navigation.replace("Login"); // Replace with your login screen route
     } catch (error) {
       console.error("Error during logout: ", error);

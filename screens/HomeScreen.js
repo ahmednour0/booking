@@ -10,12 +10,12 @@ import {
   Button,
   Image,
   Alert,
-  TouchableOpacity,
+  Platform,
+
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Header from "../components/Header.js";
 import Feather from "@expo/vector-icons/Feather";
-import DatePicker from "react-native-date-ranges";
 import {
   ModalFooter,
   ModalButton,
@@ -25,12 +25,72 @@ import {
   BottomModal,
 } from "react-native-modals";
 import { StatusBar } from "expo-status-bar";
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { format } from 'date-fns'; // Make sure to import format from date-fns
+
 const HomeScreen = () => {
-  const navigation = useNavigation();
+  const [range1, setRange1] = useState(''); // Date range text
+  const [range2, setRange2] = useState(''); // Date range text
+  const [Date1, setDate1] = useState(''); // Date range text
+  const [Date2, setDate2] = useState(''); // Date range text
+  const [startDate, setStartDate] = useState(null); // Start date
+  const [endDate, setEndDate] = useState(null); // End date
+  const [showPicker, setShowPicker] = useState(false);
+  const [showPicker2, setShowPicker2] = useState(false);
+  const [pickerMode, setPickerMode] = useState('start'); // 'start' or 'end'
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setselectedDate] = useState("");
+
+  const handleDateChange = (event, selectedDate) => {
+    setDate1(selectedDate)
+      setStartDate(selectedDate || currentDate);
+   
+      setShowPicker(false); // Close the picker
+
+      // Update the displayed range text in the format "Month Day, Year"
+      const formattedRangee = `${format(startDate, 'yyyy/MM/dd')} - ${format(selectedDate, 'yyyy/MM/dd')}`;
+      const formattedRange1 = `${formatDate(selectedDate)}`;
+
+
+      setRange1(formattedRange1);
+   
+      setselectedDate(prevSelectedDate => ({
+        ...prevSelectedDate,
+        startDate: format(selectedDate, 'yyyy/MM/dd'),
+      }));
+    
+    
+    
+  };
+  const handleDateChangee = (event, selectedDate) => {
+    setDate2(selectedDate)
+      setEndDate(selectedDate || currentDate);
+      setShowPicker2(false); // Close the picker
+
+      // Update the displayed range text in the format "Month Day, Year"
+      const formattedRangee = `${format(startDate, 'yyyy/MM/dd')} - ${format(selectedDate, 'yyyy/MM/dd')}`;
+      const formattedRange2 = `${formatDate(selectedDate)}`;
+
+      setRange2(formattedRange2);
+      setselectedDate(prevSelectedDate => ({
+        ...prevSelectedDate,
+        endDate: format(selectedDate, 'yyyy/MM/dd'), // assuming `selectedDate` contains the end date here
+      }));
+    
+    
+    
+  };
+
+
+
+  // Helper function to format the date as "Month Day, Year" (e.g., "November 21, 2024")
+  const formatDate = (date) => {
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(date).toLocaleDateString('en-US', options);
+  };
+  const navigation = useNavigation();
   const route = useRoute();
   const [isDropdownVisible, setDropdownVisible] = useState(false);
-  console.log(isDropdownVisible);
 
   const toggleDropdown = () => {
     if (isDropdownVisible === true) {
@@ -92,7 +152,7 @@ const HomeScreen = () => {
     );
   };
   const searchPlaces = (place) => {
-    if (!route.params || !selectedDate) {
+    if (!route.params || !selectedDate || !selectedDate.startDate || !selectedDate.endDate) {
       Alert.alert(
         "Invalid Details",
         "Please enter all the details",
@@ -106,18 +166,33 @@ const HomeScreen = () => {
         ],
         { cancelable: false }
       );
-    }
-
-    if (route.params && selectedDate) {
+    } else if (new Date(selectedDate.endDate) < new Date(selectedDate.startDate)) {
+      Alert.alert(
+        "Invalid Date Range",
+        "End date cannot be before start date",
+        [
+          {
+            text: "Cancel",
+            onPress: () => console.log("Cancel Pressed"),
+            style: "cancel",
+          },
+          { text: "OK", onPress: () => console.log("OK Pressed") },
+        ],
+        { cancelable: false }
+      );
+    } else {
+      // If validation passes, proceed to navigate
       navigation.navigate("Places", {
         rooms: rooms,
         adults: adults,
         children: children,
-        selectedDates: selectedDate,
+        selectedDates: selectedDate, // This contains both startDate and endDate
         place: place,
       });
     }
   };
+  
+  
 
   return (
     <>
@@ -167,13 +242,17 @@ const HomeScreen = () => {
                 alignItems: "center",
                 gap: 10,
                 paddingHorizontal: 10,
+
                 borderColor: "#ffc72c",
                 borderWidth: 2,
                 paddingVertical: 15,
               }}
+              onPress={() => {
+          setShowPicker(true);
+        }}
             >
               <Feather name="calendar" size={24} color="black" />
-              <DatePicker
+              {/* <DatePicker
                 style={{
                   width: 350,
                   height: 30,
@@ -211,8 +290,86 @@ const HomeScreen = () => {
                 placeholder="Select Your Date"
                 mode={"range"} // Assuming you want to select a range of dates
                 headerText="Custom Header"
-              />
+              /> */}
+
+
+      {/* Start date input */}
+ 
+        <TextInput
+          style={styles.input}
+          value={range1 ? range1 : ''}
+          placeholder="Select Start Date"
+          placeholderTextColor="#999"
+          editable={false} // Prevent manual input
+        />
+  
+
+      {/* End date input */}
+   
+
+      {/* DateTimePicker */}
+      {showPicker && (
+        <DateTimePicker
+          value={    Date1?Date1:currentDate}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={handleDateChange}
+          minimumDate={new Date()} // Disable all past dates
+
+        />
+      )}
+
             </Pressable>
+
+
+
+
+
+
+
+            <Pressable
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+                paddingHorizontal: 10,
+                borderColor: "#ffc72c",
+                borderWidth: 2,
+                paddingVertical: 15,
+              }}
+            >
+              <Feather name="calendar" size={24} color="black" />
+            
+
+
+              <Pressable
+        onPress={() => {
+          setShowPicker2(true);
+        }}
+      >
+        <TextInput
+          style={styles.input}
+          value={range2 ? range2 : ''}
+          placeholder="Select End Date"
+          placeholderTextColor="#999"
+          editable={false} // Prevent manual input
+        />
+        {/* DateTimePicker */}
+      {showPicker2 && (
+        <DateTimePicker
+          value={Date2?Date2:new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={handleDateChangee}
+          minimumDate={Date1?Date1:new Date()} // Disable all past dates
+
+        />
+      )}
+      </Pressable>
+
+            </Pressable>
+
+
 
             <Pressable
               onPress={() => setModalVisible(!modalVisible)}
@@ -584,10 +741,7 @@ const HomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+
   overlayContainer: {
     position: "absolute",
     top: 60, // Position the overlay below the header
@@ -614,6 +768,23 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 10,
     fontSize: 16,
+  },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  inputWrapper: {
+    width: '100%',
+    marginVertical: 10,
+  },
+  input: {
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    fontSize: 16,
+    backgroundColor: '##ccc',
+    color: '#333',
   },
 });
 
